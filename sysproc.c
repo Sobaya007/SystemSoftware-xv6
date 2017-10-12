@@ -77,6 +77,45 @@ sys_sleep(void)
   return 0;
 }
 
+int cmp_rtcdate(struct rtcdate date1, struct rtcdate date2) {
+    if (date1.year < date2.year) return -1;
+    if (date1.year > date2.year) return +1;
+    if (date1.month < date2.month) return -1;
+    if (date1.month > date2.month) return +1;
+    if (date1.day < date2.day) return -1;
+    if (date1.day > date2.day) return +1;
+    if (date1.hour < date2.hour) return -1;
+    if (date1.hour > date2.hour) return +1;
+    if (date1.minute < date2.minute) return -1;
+    if (date1.minute > date2.minute) return +1;
+    if (date1.second < date2.second) return -1;
+    if (date1.second > date2.second) return +1;
+    return 0;
+}
+
+int
+sys_sleep_until(void)
+{
+  struct rtcdate *arrival;
+  struct rtcdate current;
+  if (argptr(0, (char **)&arrival, sizeof(arrival)) < 0)
+    return -1;
+  cmostime(&current);
+  if (cmp_rtcdate(*arrival, current) < 0)
+    return -1;
+  acquire(&tickslock);
+  while(cmp_rtcdate(*arrival, current) > 0){
+    cmostime(&current);
+    if(myproc()->killed) {
+      release(&tickslock);
+      return -1;
+    }
+    sleep(&ticks, &tickslock);
+  }
+  release(&tickslock);
+  return 0;
+}
+
 // return how many clock tick interrupts have occurred
 // since start.
 int
@@ -93,7 +132,7 @@ sys_uptime(void)
 int sys_getdate(void) {
   struct rtcdate *dp;
   if (argptr(0, (char **)&dp, sizeof(dp)) < 0)
-  return -1;
+    return -1;
   cmostime(dp);
   return 0;
 }

@@ -22,6 +22,7 @@ int dup(int);
 int getpid(void);
 char* sbrk(int);
 int sleep(int);
+int sleep_until(struct rtcdate *);
 int uptime(void);
 int getdate(struct rtcdate *);
 
